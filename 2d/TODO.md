@@ -1,1 +1,2 @@
 - Add best block sizes.
+- Add a readme and implementation techniques.
