@@ -24,7 +24,7 @@ program fd3d
     !$acc update host(du)
     call cpu_time(cpuFinish)
     write (*, *) factors
-    write (*, *) 'cpu            :', cpuStart - cpuFinish, maxval(du_exact - du(1:n(1), 1:n(2), 1:n(3)))
+    write (*, *) 'cpu            :', cpuFinish - cpuStart, maxval(du_exact - du(1:n(1), 1:n(2), 1:n(3)))
     open (unit=10, file="test.dat", status="unknown")
     k = n(3) / 2
     do j = 1, n(2)
