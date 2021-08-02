@@ -1,6 +1,7 @@
 program fd3d
-    use mpi
     use openacc
+    use mpi
+
     implicit none
     integer, parameter  :: dp = kind(1.d0)
     real(dp), parameter :: two_pi = 8.d0 * atan(1.d0)
@@ -10,22 +11,22 @@ program fd3d
     real(dp) :: factors(5)
     real(dp) :: timer(2)
     real(dp), dimension(:, :, :), allocatable :: u, du, du_exact
-    integer :: ierr, myrank, nprocs
+    integer :: ierr, mpi_rank, mpi_procs
  
     call mpi_init(ierr)
-    call mpi_comm_rank(mpi_comm_world, myrank,ierr)
-    call mpi_comm_size(mpi_comm_world, nprocs, ierr)
+    call mpi_comm_rank(mpi_comm_world, mpi_rank,ierr)
+    call mpi_comm_size(mpi_comm_world, mpi_procs, ierr)
 
 
     call box_init('der3d.nml')
     call allocate_arrays()
     call initial_condition()
-    call synchronize_gpu_state()
+    call synchronize_gpu_state(u)
     call set_factors()
 
-    #ifdef OPENACC
-        call acc_set_device_num(myrank,acc_device_nvidia)
-    #endif
+   ! #ifdef OPENACC
+    call acc_set_device_num(mpi_rank,acc_device_nvidia)
+   ! #endif
 
     !$acc data copy(u,du,n,factors)
 
@@ -50,7 +51,7 @@ contains
         read (10, nml=box_nml)
         close (10)
 
-        local_n3 = n(3)/nprocs; 
+        local_n3 = n(3)/mpi_procs; 
         length = length * two_pi
         dl = length / n(1)
         dl_inv = 1.d0 / dl
@@ -78,7 +79,7 @@ contains
         du_exact(:, :, :) = 0.d0
 
         do k = 1, local_n3
-            z = dl * (k - 1 + local_n3*myrank)
+            z = dl * (k - 1 + local_n3*mpi_rank)
             do j = 1, n(2)
                 y = dl * (j - 1)
                 do i = 1, n(1)
@@ -89,7 +90,7 @@ contains
         end do
 
         do k = 1, local_n3
-            z = dl * (k - 1 + local_n3*myrank)
+            z = dl * (k - 1 + local_n3*mpi_rank)
             do j = 1, n(2)
                 y = dl * (j - 1)
                 do i = 1, n(1)
@@ -119,7 +120,8 @@ contains
 
     subroutine synchronize_gpu_state(u)
         real(dp),dimension(-1:,-1:,-1:),intent(inout) :: u
-        integer :: data_size, right, left
+        integer :: data_size, right, left, mpi_error_flag
+        integer :: mpi_status_flag(mpi_status_size)
 
         !! Periodic Boundary Setup
         !! X-direction

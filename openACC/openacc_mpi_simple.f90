@@ -41,13 +41,13 @@ program test_mpi_openacc
   use mod_mpi
   use mod_param_array
   implicit none
-  integer::i
+  integer::i, j
   
   
   call mpi_initialize
-#ifdef OPENACC
+! #ifdef OPENACC
   call acc_set_device_num(myrank,acc_device_nvidia)
-#endif
+! #endif
 
   
   open(unit=10,file="input.dat",status="old")
@@ -57,13 +57,15 @@ program test_mpi_openacc
   allocate(A(N/nprocs))
 
   A=0.d0
-  !$acc data copy(A,N,nprocs,myrank)
-
+ !$acc data copy(A,N,nprocs,myrank)
+  do j = 1, N/nprocs
   !$acc kernels present(A,myrank,nprocs,N)
   do i=1,N/nprocs
      A(i)=i+myrank*N/nprocs
   enddo
   !$acc end kernels
+  end do
+
   !$acc end data
 
 

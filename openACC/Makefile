@@ -9,6 +9,9 @@ mpi:
 	mpif90 $(ACCFLAGS) openacc_mpi_simple.f90 -o exe_pgi_simp
 
 
+fd_mpi:
+	mpif90 $(ACCFLAGS) fd3d_openacc_mpi.f90 -o exe_openacc_mpi
+
 
 .phony : clean cleandata cleanall
 
