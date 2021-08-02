@@ -20,6 +20,7 @@ program fd3d
     call box_init('der3d.nml')
     call allocate_arrays()
     call initial_condition()
+    call synchronize_gpu_state()
     call set_factors()
 
     #ifdef OPENACC
@@ -35,8 +36,8 @@ program fd3d
     end do
     call cpu_time(timer(2))
     write(*,*) "Loop ends"
-
     !$acc end data
+
     write (*, *) 'time taken :', timer(2) - timer(1), 'error :', maxval(du_exact - du(1:n(1), 1:n(2), 1:n(3)))
 
 contains
@@ -164,7 +165,7 @@ contains
             call MPI_SENDRECV(u(-1,-1,1),data_size,MPI_DOUBLE_PRECISION,left,1,&
                 u(-1,-1,local_n3+1),data_size,MPI_DOUBLE_PRECISION,right,1,MPI_COMM_WORLD,mpi_status_flag,mpi_error_flag)
         endif
-    end subroutine director_synchronize_mpi_state
+    end subroutine synchronize_gpu_state
 
 
 end program fd3d
