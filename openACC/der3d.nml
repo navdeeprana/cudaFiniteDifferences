@@ -1,0 +1,5 @@
+&box_nml
+n         = 512, 512, 512
+length    = 1.d0
+num_iters = 100
+/

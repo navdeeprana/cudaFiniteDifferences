@@ -1,5 +1,5 @@
 FLAGS     =
-ACCFLAGS = -fast -ta=tesla,host -Minfo=accel -cpp $(FLAGS)
+ACCFLAGS = -Mpreprocess -Minform=warn -Minfo=accel -Mcuda=cc70,cuda11.0 -fast -ta=tesla,host $(FLAGS)
 
 all : openacc
 openacc :

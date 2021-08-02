@@ -64,6 +64,7 @@ program test_mpi_openacc
      A(i)=i+myrank*N/nprocs
   enddo
   !$acc end kernels
+  !$acc end data
 
 
   write(fname,'(g8.0)') myrank+1
@@ -77,10 +78,3 @@ program test_mpi_openacc
   call mpi_finalize(ierr)
   
 end program test_mpi_openacc
-
-
-
-
-
-
-
