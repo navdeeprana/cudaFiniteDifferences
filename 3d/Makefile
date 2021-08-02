@@ -4,9 +4,9 @@ all : cpu mod sharedxy
 cpu :
 	gfortran $(FLAGS) -O3 fd3d_cpu.f90 -o exe_cpu
 mod :
-	pgf90 $(CUDAFLAGS) finiteDifference3d.f90 fd3d_mod.f90 -o exe_mod
+	nvfortran $(CUDAFLAGS) finiteDifference3d.f90 fd3d_mod.f90 -o exe_mod
 sharedxy :
-	pgf90 $(CUDAFLAGS) finiteDifference3d.f90 fd3d_sharedxy.f90 -o exe_sharedxy
+	nvfortran $(CUDAFLAGS) finiteDifference3d.f90 fd3d_sharedxy.f90 -o exe_sharedxy
 
 .phony : clean cleandata cleanall
 
