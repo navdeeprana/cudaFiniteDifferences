@@ -134,4 +134,27 @@ contains
         end do
         !$acc end parallel
     end subroutine derivative_mod
+
+    subroutine derivative_mod_ver2()
+        integer :: i, j, k
+        integer :: l, xn, yn, zn
+        real(dp) :: duijk
+
+        !$acc parallel loop collapse(3) present(u,du,n,factors)
+        do k = 1, n(3)
+            do j = 1, n(2)
+                do i = 1, n(1)
+                    duijk = 0.0_dp
+                    do l = -2, 2
+                        xn    = mod(i + l + n(1) - 1, n(1)) + 1
+                        yn    = mod(j + l + n(2) - 1, n(2)) + 1
+                        zn    = mod(k + l + n(3) - 1, n(3)) + 1
+                        duijk = duijk + (u(xn, j, k) + u(i, yn, k) + u(i, j, zn)) * factors(l+3)
+                    end do
+                    du(i,j,k) =  duijk
+                end do
+            end do
+        end do
+        !$acc end parallel
+    end subroutine derivative_mod_ver2
 end program fd3d
