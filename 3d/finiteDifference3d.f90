@@ -52,11 +52,11 @@ contains
     end subroutine set_factors
 
     subroutine allocate_arrays()
-        allocate(u (n(1),n(2),n(3)))
+        allocate(u(-1:n(1)+2,-1:n(2)+2,-1:n(3)+2))
         allocate(du(n(1),n(2),n(3)))
         allocate(du_exact(n(1),n(2),n(3)))
 
-        allocate(u_d (n(1),n(2),n(3)))
+        allocate(u_d(-1:n(1)+2,-1:n(2)+2,-1:n(3)+2))
         allocate(du_d(n(1),n(2),n(3)))
         u        = 0.d0
         du       = 0.d0
@@ -82,18 +82,35 @@ contains
             end do
         end do
 
+        ! Periodic boundary conditions
+        u(0,:,:)      = u(n(1),:,:)
+        u(-1,:,:)     = u(n(1)-1,:,:)
+        u(n(1)+1,:,:) = u(1,:,:)
+        u(n(1)+2,:,:) = u(2,:,:)
+
+        u(:,0,:)      = u(:,n(2),:)
+        u(:,-1,:)     = u(:,n(2)-1,:)
+        u(:,n(2)+1,:) = u(:,1,:)
+        u(:,n(2)+2,:) = u(:,2,:)
+
+        u(:,:,0)      = u(:,:,n(3))
+        u(:,:,-1)     = u(:,:,n(3)-1)
+        u(:,:,n(3)+1) = u(:,:,1)
+        u(:,:,n(3)+2) = u(:,:,2)
+
         !! Copy to device
         u_d(:,:,:) = u(:,:,:)
         !! Set the device output to 0
         du_d(:,:,:) = 0.d0
     end subroutine initial_condition
 
-    attributes(global) subroutine divergence_sharedxy(n1,n2,n3)
+    attributes(global) subroutine divergence_sharedxy(n1,n2,n3,u,du)
         !! divergence_shared :
         !! Compute the divergence using mod function to access neighbours on boundaries.
         !! The memory access on boundaries in not-contigous.
-
         integer, value, intent(in) :: n1, n2, n3
+        real(dp), dimension(-1:n1+2,-1:n2,-1:n3), intent(in) :: u
+        real(dp), dimension(n1,n2,n3), intent(out) :: du
 
         integer          :: i, j, k, iG, jG, kW, kB
         real(dp)         :: front(2), center, behind(2)
@@ -170,11 +187,13 @@ contains
         end do
     end subroutine divergence_sharedxy
 
-    attributes(global) subroutine divergence_mod(n1, n2, n3)
+    attributes(global) subroutine divergence_mod(n1, n2, n3, u, du)
         !! divergence_mod :
         !! Compute the divergence using mod function to access neighbours on boundaries.
         !! The memory access on boundaries in not-contigous.
         integer, value, intent(in) :: n1, n2, n3
+        real(dp), dimension(-1:n1+2,-1:n2,-1:n3), intent(in) :: u
+        real(dp), dimension(n1,n2,n3), intent(out) :: du
 
         integer  :: i, j,k, l, xn(5),yn(5),zn(5)
         real(dp) :: ux(5), uy(5), uz(5)
@@ -199,6 +218,26 @@ contains
                     + (ux(4)+uy(4)+uz(4))*factors_d(4) &
                     + (ux(5)+uy(5)+uz(5))*factors_d(5)          
     end subroutine divergence_mod
+
+    attributes(global) subroutine divergence_halo(n1, n2, n3, u, du)
+        !! divergence_mod :
+        !! Compute the divergence using mod function to access neighbours on boundaries.
+        !! The memory access on boundaries in not-contigous.
+        integer, value, intent(in) :: n1, n2, n3
+        real(dp), dimension(-1:n1+2,-1:n2,-1:n3), intent(in) :: u
+        real(dp), dimension(n1,n2,n3), intent(out) :: du
+
+        integer  :: i, j,k
+
+        i = (blockIdx%x-1) * blockDim%x + threadIdx%x
+        j = (blockIdx%y-1) * blockDim%y + threadIdx%y
+        k = (blockIdx%z-1) * blockDim%z + threadIdx%z
+        du(i, j, k) = (u(i - 2, j, k) + u(i, j - 2, k) + u(i, j, k - 2)) * factors_d(1) + &
+                      (u(i - 1, j, k) + u(i, j - 1, k) + u(i, j, k - 1)) * factors_d(2) + &
+                      (u(i, j, k)     + u(i, j, k)     + u(i, j, k)    ) * factors_d(3) + &
+                      (u(i + 1, j, k) + u(i, j + 1, k) + u(i, j, k + 1)) * factors_d(4) + &
+                      (u(i + 2, j, k) + u(i, j + 2, k) + u(i, j, k + 2)) * factors_d(5)
+    end subroutine divergence_halo
 
     subroutine divergence_cpu()
         integer  :: i, j,k, l, xn(5),yn(5),zn(5)
