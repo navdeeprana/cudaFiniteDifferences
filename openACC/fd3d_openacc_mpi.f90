@@ -39,6 +39,7 @@ program fd3d
         call nvtxStartRange("Derivative")
         call derivative()
         call nvtxEndRange
+        call mpi_barrier(mpi_comm_world,ierr)
     end do
     call cpu_time(timer(2))
     write(*,*) "Loop ends"
