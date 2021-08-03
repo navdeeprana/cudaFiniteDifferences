@@ -21,7 +21,6 @@ program fd3d
     call box_init('der3d.nml')
     call allocate_arrays()
     call initial_condition()
-    call synchronize_gpu_state(u)
     call set_factors()
 
    ! #ifdef OPENACC
@@ -33,6 +32,7 @@ program fd3d
     write(*,*) "Loop begins"
     call cpu_time(timer(1))
     do itime = 0, num_iters
+        call synchronize_gpu_state(u)
         call derivative()
     end do
     call cpu_time(timer(2))
@@ -132,41 +132,47 @@ contains
         u(n(1)+2,:,:) = u(2,:,:)
 
         !! Y-direction
+
         u(:,0,:)      = u(:,n(2),:)
         u(:,-1,:)     = u(:,n(2)-1,:)
         u(:,n(2)+1,:) = u(:,1,:)
         u(:,n(2)+2,:) = u(:,2,:)
 
         !! Z-Direction Synchronisation, If only 1 process, no point using mpi.
-        if (mpi_procs ==1) then
-            u(:,:,0)          = u(:,:,local_n3)
-            u(:,:,-1)         = u(:,:,local_n3-1)
 
-            u(:,:,local_n3+1) = u(:,:,1)
-            u(:,:,local_n3+2) = u(:,:,2)
+        data_size = 2*((n(1)+4)*(n(2)+4))
+ !$acc host_data use_device( u ) 
 
-        else
-            data_size = 2*((n(1)+4)*(n(2)+4))
+        ! if (mpi_procs ==1) then
+        !     u(:,:,0)          = u(:,:,local_n3)
+        !     u(:,:,-1)         = u(:,:,local_n3-1)
 
-            if (mpi_rank == mpi_procs - 1) then
-                right = 0
-            else
-                right = mpi_rank+1
-            end if
-            if (mpi_rank == 0) then
-                left = mpi_procs - 1
-            else
-                left = mpi_rank - 1
-            end if
+        !     u(:,:,local_n3+1) = u(:,:,1)
+        !     u(:,:,local_n3+2) = u(:,:,2)
 
-            !! Send right boundary elements to next processor, and recieve the same from previous.
-            call MPI_SENDRECV(u(-1,-1,local_n3-1),data_size,MPI_DOUBLE_PRECISION,right,0,&
-                u(-1,-1,-1),data_size,MPI_DOUBLE_PRECISION,left,0,MPI_COMM_WORLD,mpi_status_flag,mpi_error_flag)
+        ! else
 
-            !! Send left boundary elements to previous processor, which stores it at left.
-            call MPI_SENDRECV(u(-1,-1,1),data_size,MPI_DOUBLE_PRECISION,left,1,&
-                u(-1,-1,local_n3+1),data_size,MPI_DOUBLE_PRECISION,right,1,MPI_COMM_WORLD,mpi_status_flag,mpi_error_flag)
-        endif
+        !     if (mpi_rank == mpi_procs - 1) then
+        !         right = 0
+        !     else
+        !         right = mpi_rank+1
+        !     end if
+        !     if (mpi_rank == 0) then
+        !         left = mpi_procs - 1
+        !     else
+        !         left = mpi_rank - 1
+        !     end if
+
+        !! Send right boundary elements to next processor, and recieve the same from previous.
+        call MPI_SENDRECV(u(-1,-1,local_n3-1),data_size,MPI_DOUBLE_PRECISION,right,0,&
+            u(-1,-1,-1),data_size,MPI_DOUBLE_PRECISION,left,0,MPI_COMM_WORLD,mpi_status_flag,mpi_error_flag)
+
+        !! Send left boundary elements to previous processor, which stores it at left.
+        call MPI_SENDRECV(u(-1,-1,1),data_size,MPI_DOUBLE_PRECISION,left,1,&
+            u(-1,-1,local_n3+1),data_size,MPI_DOUBLE_PRECISION,right,1,MPI_COMM_WORLD,mpi_status_flag,mpi_error_flag)
+        ! endif
+
+        !$acc end host_data
     end subroutine synchronize_gpu_state
 
 
