@@ -3,7 +3,7 @@ ACCFLAGS = -Mpreprocess -Minform=warn -Minfo=accel -Mcuda=cc70,cuda11.0 -fast -t
 
 all : openacc
 openacc :
-	pgfortran $(ACCFLAGS) fd3d_openacc.f90 -o exe_openacc
+	nvfortran $(ACCFLAGS) fd3d_openacc.f90 -o exe_openacc
 
 mpi:
 	mpif90 $(ACCFLAGS) openacc_mpi_simple.f90 -o exe_pgi_simp

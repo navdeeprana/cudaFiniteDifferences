@@ -15,10 +15,12 @@ program fd3d
     call set_factors()
 
     !$acc data copy(u,du,n,factors)
+
     write(*,*) "Loop begins"
     call cpu_time(timer(1))
     do itime = 0, num_iters
-        call derivative()
+        ! call derivative()
+        call derivative_mod()
     end do
     call cpu_time(timer(2))
     write(*,*) "Loop ends"
@@ -68,7 +70,8 @@ contains
                 y = dl * (j - 1)
                 do i = 1, n(1)
                     x = dl * (i - 1)
-                    u(i, j, k) = sin(x) + sin(y) + sin(z)
+                    u(i, j, k)        = sin(x) + sin(y) + sin(z)
+                    du_exact(i, j, k) = cos(x) + cos(y) + cos(z)
                 end do
             end do
         end do
@@ -86,19 +89,8 @@ contains
 
         u(:,:,0)      = u(:,:,n(3))
         u(:,:,-1)     = u(:,:,n(3)-1)
-        u(:,:,n(2)+1) = u(:,:,1)
-        u(:,:,n(2)+2) = u(:,:,2)
-
-        do k = 1, n(3)
-            z = dl * (k - 1)
-            do j = 1, n(2)
-                y = dl * (j - 1)
-                do i = 1, n(1)
-                    x = dl * (i - 1)
-                    du_exact(i, j, k) = cos(x) + cos(y) + cos(z)
-                end do
-            end do
-        end do
+        u(:,:,n(3)+1) = u(:,:,1)
+        u(:,:,n(3)+2) = u(:,:,2)
     end subroutine initial_condition
 
     subroutine derivative()
@@ -109,10 +101,10 @@ contains
             do j = 1, n(2)
                 do i = 1, n(1)
                     du(i, j, k) = (u(i - 2, j, k) + u(i, j - 2, k) + u(i, j, k - 2)) * factors(1) + &
-                        (u(i - 1, j, k) + u(i, j - 1, k) + u(i, j, k - 1)) * factors(2) + &
-                        (u(i, j, k) + u(i, j, k) + u(i, j, k)) * factors(3) + &
-                        (u(i + 1, j, k) + u(i, j + 1, k) + u(i, j, k + 1)) * factors(4) + &
-                        (u(i + 2, j, k) + u(i, j + 2, k) + u(i, j, k + 2)) * factors(5)
+                                  (u(i - 1, j, k) + u(i, j - 1, k) + u(i, j, k - 1)) * factors(2) + &
+                                  (u(i, j, k)     + u(i, j, k)     + u(i, j, k)    ) * factors(3) + &
+                                  (u(i + 1, j, k) + u(i, j + 1, k) + u(i, j, k + 1)) * factors(4) + &
+                                  (u(i + 2, j, k) + u(i, j + 2, k) + u(i, j, k + 2)) * factors(5)
                 end do
             end do
         end do
@@ -127,19 +119,16 @@ contains
         do k = 1, n(3)
             do j = 1, n(2)
                 do i = 1, n(1)
-
                     do l = -2, 2
                         xn(l + 3) = mod(i + l + n(1) - 1, n(1)) + 1
                         yn(l + 3) = mod(j + l + n(2) - 1, n(2)) + 1
                         zn(l + 3) = mod(k + l + n(3) - 1, n(3)) + 1
                     end do
-
                     du(i, j, k) = (u(xn(1), j, k) + u(i, yn(1), k) + u(i, j, zn(1))) * factors(1) + &
-                        (u(xn(2), j, k) + u(i, yn(2), k) + u(i, j, zn(2))) * factors(2) + &
-                        (u(xn(3), j, k) + u(i, yn(3), k) + u(i, j, zn(3))) * factors(3) + &
-                        (u(xn(4), j, k) + u(i, yn(4), k) + u(i, j, zn(4))) * factors(4) + &
-                        (u(xn(5), j, k) + u(i, yn(5), k) + u(i, j, zn(5))) * factors(5)
-
+                                  (u(xn(2), j, k) + u(i, yn(2), k) + u(i, j, zn(2))) * factors(2) + &
+                                  (u(xn(3), j, k) + u(i, yn(3), k) + u(i, j, zn(3))) * factors(3) + &
+                                  (u(xn(4), j, k) + u(i, yn(4), k) + u(i, j, zn(4))) * factors(4) + &
+                                  (u(xn(5), j, k) + u(i, yn(5), k) + u(i, j, zn(5))) * factors(5)
                 end do
             end do
         end do
