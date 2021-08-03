@@ -31,7 +31,7 @@ program fd3d
 
     call cuda_check_stat(cudaEventRecord(startEvent, 0))
     do itime = 0, num_iters
-        call divergence_sharedxy <  <  < grid_sp, block_sp, total_shared_mem >  >  > (n(1), n(2), n(3), u_d, du_d)
+        call divergence_sharedxy <<< grid_sp, block_sp, total_shared_mem >>> (n(1), n(2), n(3), u_d, du_d)
     end do
     call cuda_check_stat(cudaEventRecord(stopEvent, 0))
     call cuda_check_stat(cudaEventSynchronize(stopEvent))
