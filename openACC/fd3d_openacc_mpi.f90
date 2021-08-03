@@ -32,7 +32,7 @@ program fd3d
     write(*,*) "Loop begins"
     call cpu_time(timer(1))
     do itime = 0, num_iters
-        call synchronize_gpu_state(u)
+        call synchronize_gpu_state()
         call derivative()
     end do
     call cpu_time(timer(2))
@@ -118,50 +118,64 @@ contains
         !$acc end parallel
     end subroutine derivative
 
-    subroutine synchronize_gpu_state(u)
-        real(dp),dimension(-1:,-1:,-1:),intent(inout) :: u
+    subroutine synchronize_gpu_state()
+        integer :: i,j,k
         integer :: data_size, right, left, mpi_error_flag
         integer :: mpi_status_flag(mpi_status_size)
 
         !! Periodic Boundary Setup
         !! X-direction
         
-        u(0,:,:)      = u(n(1),:,:)
-        u(-1,:,:)     = u(n(1)-1,:,:)
-        u(n(1)+1,:,:) = u(1,:,:)
-        u(n(1)+2,:,:) = u(2,:,:)
+        !$acc parallel loop collapse(3)  present(u)  
+        do k=1,local_n3
+        do j=1,n(2)
+!!        !$acc loop independent
+        do i=-1,0
+        u(i,j,k)      = u(n(1)+i,j,k)
+        u(n(1)+i+2,j,k) = u(i+2,j,k)
+        enddo
+        enddo
+        enddo
+        !$acc end parallel 
 
         !! Y-direction
-
-        u(:,0,:)      = u(:,n(2),:)
-        u(:,-1,:)     = u(:,n(2)-1,:)
-        u(:,n(2)+1,:) = u(:,1,:)
-        u(:,n(2)+2,:) = u(:,2,:)
+        !$acc parallel loop collapse(3) present(u)
+        do k=1,local_n3
+        do j=-1,0 
+!!        !$acc loop independent
+        do i=1,n(1)
+        u(i,j,k)      = u(i,n(2)+j,k)
+        u(i,n(2)+j+2,k) = u(i,j+2,k)
+         enddo
+         enddo
+         enddo
+        !$acc end parallel 
 
         !! Z-Direction Synchronisation, If only 1 process, no point using mpi.
 
         data_size = 2*((n(1)+4)*(n(2)+4))
- !$acc host_data use_device( u ) 
 
-        ! if (mpi_procs ==1) then
-        !     u(:,:,0)          = u(:,:,local_n3)
-        !     u(:,:,-1)         = u(:,:,local_n3-1)
+        !! if (mpi_procs ==1) then
+        !!     u(:,:,0)          = u(:,:,local_n3)
+        !!     u(:,:,-1)         = u(:,:,local_n3-1)
 
-        !     u(:,:,local_n3+1) = u(:,:,1)
-        !     u(:,:,local_n3+2) = u(:,:,2)
+        !!     u(:,:,local_n3+1) = u(:,:,1)
+        !!     u(:,:,local_n3+2) = u(:,:,2)
 
-        ! else
+        !! else
 
-        !     if (mpi_rank == mpi_procs - 1) then
-        !         right = 0
-        !     else
-        !         right = mpi_rank+1
-        !     end if
-        !     if (mpi_rank == 0) then
-        !         left = mpi_procs - 1
-        !     else
-        !         left = mpi_rank - 1
-        !     end if
+        if (mpi_rank == mpi_procs - 1) then
+              right = 0
+        else
+             right = mpi_rank+1
+        end if
+        if (mpi_rank == 0) then
+              left = mpi_procs - 1
+        else
+              left = mpi_rank - 1
+        end if
+
+        !$acc host_data use_device( u ) 
 
         !! Send right boundary elements to next processor, and recieve the same from previous.
         call MPI_SENDRECV(u(-1,-1,local_n3-1),data_size,MPI_DOUBLE_PRECISION,right,0,&
@@ -170,8 +184,7 @@ contains
         !! Send left boundary elements to previous processor, which stores it at left.
         call MPI_SENDRECV(u(-1,-1,1),data_size,MPI_DOUBLE_PRECISION,left,1,&
             u(-1,-1,local_n3+1),data_size,MPI_DOUBLE_PRECISION,right,1,MPI_COMM_WORLD,mpi_status_flag,mpi_error_flag)
-        ! endif
-
+        !! endif
         !$acc end host_data
     end subroutine synchronize_gpu_state
 
