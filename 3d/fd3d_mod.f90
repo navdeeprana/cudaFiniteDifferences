@@ -1,3 +1,4 @@
+! ./exe_mod 32 4 8, fix x*y*z
 program fd3d
 
     use finiteDifference3d
@@ -31,6 +32,6 @@ program fd3d
     call cuda_check_stat(cudaEventSynchronize(stopEvent))
     call cuda_check_stat(cudaEventElapsedTime(simTime,startEvent,stopEvent))
     du = du_d
-    write(*,*) 'mod            :', block_sp, simTime, maxval(du_exact-du)
+    write(*,*) 'mod : ', block_sp, simTime, maxval(du_exact-du)
 
 end program fd3d
