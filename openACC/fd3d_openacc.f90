@@ -15,18 +15,15 @@ program fd3d
     call set_factors()
 
     !$acc data copy(u,du,n,factors)
-
-    write(*,*) "Loop begins"
+    write(*,*) "Profiling start"
     call cpu_time(timer(1))
     do itime = 0, num_iters
-        ! call derivative()
-        call derivative_mod()
+        call derivative_halo()
     end do
     call cpu_time(timer(2))
-    write(*,*) "Loop ends"
-
     !$acc end data
     write (*, *) 'time taken :', timer(2) - timer(1), 'error :', maxval(du_exact - du(1:n(1), 1:n(2), 1:n(3)))
+    write(*,*) "Profiling end"
 
 contains
 
@@ -93,7 +90,7 @@ contains
         u(:,:,n(3)+2) = u(:,:,2)
     end subroutine initial_condition
 
-    subroutine derivative()
+    subroutine derivative_halo()
         integer  :: i, j, k
 
         !$acc parallel loop collapse(3) present(u,du,n,factors)
@@ -109,7 +106,7 @@ contains
             end do
         end do
         !$acc end parallel
-    end subroutine derivative
+    end subroutine derivative_halo
 
     subroutine derivative_mod()
         integer :: i, j, k
