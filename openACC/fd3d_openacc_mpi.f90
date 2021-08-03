@@ -1,4 +1,5 @@
 program fd3d
+    use nvtx    
     use openacc
     use mpi
 
@@ -32,8 +33,12 @@ program fd3d
     write(*,*) "Loop begins"
     call cpu_time(timer(1))
     do itime = 0, num_iters
+        call nvtxStartRange("MPI")
         call synchronize_gpu_state()
+        call nvtxEndRange
+        call nvtxStartRange("Derivative")
         call derivative()
+        call nvtxEndRange
     end do
     call cpu_time(timer(2))
     write(*,*) "Loop ends"
