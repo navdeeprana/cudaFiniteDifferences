@@ -19,6 +19,8 @@ program fd3d
     call cpu_time(timer(1))
     do itime = 0, num_iters
         call derivative_halo()
+        ! call derivative_mod()
+        ! call derivative_mod_ver2()
     end do
     call cpu_time(timer(2))
     !$acc end data
