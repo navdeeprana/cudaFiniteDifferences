@@ -1,4 +1,3 @@
-! ./exe_mod 32 4 8, fix x*y*z
 program fd3d
 
     use finiteDifference3d
@@ -22,17 +21,17 @@ program fd3d
     call set_factors()
 
     block_size = [32, 8, 4]
-    block_sp   = dim3(block_size(1),block_size(2),block_size(3))
-    grid_sp    = dim3(n(1)/block_sp%x,n(2)/block_sp%y,n(3)/block_sp%z)
+    block_sp = dim3(block_size(1), block_size(2), block_size(3))
+    grid_sp = dim3(n(1) / block_sp%x, n(2) / block_sp%y, n(3) / block_sp%z)
 
-    call cuda_check_stat(cudaEventRecord(startEvent,0))
+    call cuda_check_stat(cudaEventRecord(startEvent, 0))
     do itime = 0, num_iters
-        call divergence_mod<<<grid_sp, block_sp>>>(n(1),n(2),n(3),u_d,du_d)
+        call divergence_mod <  <  < grid_sp, block_sp >  >  > (n(1), n(2), n(3), u_d, du_d)
     end do
-    call cuda_check_stat(cudaEventRecord(stopEvent,0))
+    call cuda_check_stat(cudaEventRecord(stopEvent, 0))
     call cuda_check_stat(cudaEventSynchronize(stopEvent))
-    call cuda_check_stat(cudaEventElapsedTime(simTime,startEvent,stopEvent))
+    call cuda_check_stat(cudaEventElapsedTime(simTime, startEvent, stopEvent))
     du = du_d
-    write(*,*) 'mod : ', block_sp, simTime, maxval(du_exact-du)
+    write (*, *) 'mod : ', block_sp, simTime, maxval(du_exact - du)
 
 end program fd3d
