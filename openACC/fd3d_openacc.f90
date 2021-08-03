@@ -123,7 +123,7 @@ contains
         integer :: i, j, k
         integer :: l, xn(5), yn(5), zn(5)
 
-        !$acc parallel loop collapse(3) present(u,du,n,factors)
+        !$acc parallel loop collapse(3) present(u,du,n,factors) private(xn,yn,zn)
         do k = 1, n(3)
             do j = 1, n(2)
                 do i = 1, n(1)
