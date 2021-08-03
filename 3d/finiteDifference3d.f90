@@ -70,7 +70,7 @@ contains
         u(:,:,:)        = 0.d0
         du_exact(:,:,:) = 0.d0
 
-        do k = 1,n(2)
+        do k = 1,n(3)
             z = dl*(k-1)
             do j = 1,n(2)
                 y = dl*(j-1)

@@ -1,5 +1,5 @@
 FLAGS     =
-CUDAFLAGS = -Mcuda=cc70,cuda10.1 -Mpreprocess -O3 $(FLAGS)
+CUDAFLAGS = -Mcuda=cc70,cuda11.0 -Mpreprocess -O3 $(FLAGS)
 all : cpu mod sharedxy
 cpu :
 	gfortran $(FLAGS) -O3 fd3d_cpu.f90 -o exe_cpu

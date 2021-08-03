@@ -38,6 +38,5 @@ program fd3d
     call cuda_check_stat(cudaEventElapsedTime(simTime,startEvent,stopEvent))
     du = du_d
     write(*,*) 'Sharedxy :', XWORK, YWORK, ZWORK, simTime, maxval(du_exact-du)
-    write(*,*) maxloc(du_exact-du)
 
 end program fd3d
