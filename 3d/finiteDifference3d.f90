@@ -108,9 +108,9 @@ contains
         !! divergence_shared :
         !! Compute the divergence using mod function to access neighbours on boundaries.
         !! The memory access on boundaries in not-contigous.
-        integer, value, intent(in)                               :: n1, n2, n3
-        real(dp), dimension(-1:n1 + 2, -1:n2, -1:n3), intent(in) :: u
-        real(dp), dimension(n1, n2, n3), intent(out)             :: du
+        integer, value, intent(in)                                       :: n1, n2, n3
+        real(dp), dimension(-1:n1 + 2, -1:n2 + 2, -1:n3 + 2), intent(in) :: u
+        real(dp), dimension(n1, n2, n3), intent(out)                     :: du
 
         integer          :: i, j, k, iG, jG, kW, kB
         real(dp)         :: front(2), center, behind(2)
@@ -191,9 +191,9 @@ contains
         !! divergence_mod :
         !! Compute the divergence using mod function to access neighbours on boundaries.
         !! The memory access on boundaries in not-contigous.
-        integer, value, intent(in)                               :: n1, n2, n3
-        real(dp), dimension(-1:n1 + 2, -1:n2, -1:n3), intent(in) :: u
-        real(dp), dimension(n1, n2, n3), intent(out)             :: du
+        integer, value, intent(in)                                       :: n1, n2, n3
+        real(dp), dimension(-1:n1 + 2, -1:n2 + 2, -1:n3 + 2), intent(in) :: u
+        real(dp), dimension(n1, n2, n3), intent(out)                     :: du
 
         integer  :: i, j, k, l, xn(5), yn(5), zn(5)
         real(dp) :: ux(5), uy(5), uz(5)
@@ -220,12 +220,11 @@ contains
     end subroutine divergence_mod
 
     attributes(global) subroutine divergence_halo(n1, n2, n3, u, du)
-        !! divergence_mod :
-        !! Compute the divergence using mod function to access neighbours on boundaries.
-        !! The memory access on boundaries in not-contigous.
-        integer, value, intent(in)                               :: n1, n2, n3
-        real(dp), dimension(-1:n1 + 2, -1:n2, -1:n3), intent(in) :: u
-        real(dp), dimension(n1, n2, n3), intent(out)             :: du
+        !! divergence_halo :
+        !! Create a padding around the array to take care of the boundaries.
+        integer, value, intent(in)                                       :: n1, n2, n3
+        real(dp), dimension(-1:n1 + 2, -1:n2 + 2, -1:n3 + 2), intent(in) :: u
+        real(dp), dimension(n1, n2, n3), intent(out)                     :: du
 
         integer  :: i, j, k
 
