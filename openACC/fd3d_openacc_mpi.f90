@@ -2,6 +2,7 @@ program fd3d
     use nvtx    
     use openacc
     use mpi
+    use derivative_mod_gpu
 
     implicit none
     integer, parameter  :: dp = kind(1.d0)
@@ -37,7 +38,8 @@ program fd3d
         call synchronize_gpu_state()
         call nvtxEndRange
         call nvtxStartRange("Derivative")
-        call derivative()
+!!        call derivative()
+        call derivative_halo_gpu_dev(u,du,n(1),n(2),local_n3,factors)
         call nvtxEndRange
         call mpi_barrier(mpi_comm_world,ierr)
     end do
@@ -45,7 +47,7 @@ program fd3d
     write(*,*) "Loop ends"
     !$acc end data
 
-    write (*, *) 'time taken :', timer(2) - timer(1), 'error :', maxval(du_exact - du(1:n(1), 1:n(2), 1:n(3)))
+    write (*, *) 'time taken :', timer(2) - timer(1), 'error :', maxval(du_exact - du(1:n(1), 1:n(2), 1:local_n3))
 
 contains
 
@@ -69,8 +71,8 @@ contains
 
     subroutine allocate_arrays()
         allocate (u(-1:n(1) + 2, -1:n(2) + 2, -1:local_n3 + 2))
-        allocate (du(n(1), n(2), n(3)))
-        allocate (du_exact(n(1), n(2), n(3)))
+        allocate (du(n(1), n(2), local_n3))
+        allocate (du_exact(n(1), n(2), local_n3))
 
         u = 0.d0
         du = 0.d0
