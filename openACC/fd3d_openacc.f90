@@ -1,29 +1,34 @@
 program fd3d
+    use derivative_mod_gpu
     implicit none
     integer, parameter  :: dp = kind(1.d0)
     real(dp), parameter :: two_pi = 8.d0 * atan(1.d0)
 
-    integer  :: n(3), num_iters, block_size(3), itime
+    integer  :: n(3), num_iters, itime
     real(dp) :: length, dl, dl_inv
     real(dp) :: factors(5)
     real(dp) :: timer(2)
     real(dp), dimension(:, :, :), allocatable :: u, du, du_exact
+
 
     call box_init('der3d.nml')
     call allocate_arrays()
     call initial_condition()
     call set_factors()
 
+
     !$acc data copy(u,du,n,factors)
     write(*,*) "Profiling start"
     call cpu_time(timer(1))
     do itime = 0, num_iters
-        call derivative_halo()
+         call derivative_gpu_dev(u,du,n(1),n(2),n(3),factors)
+        ! call derivative_halo()
         ! call derivative_mod()
         ! call derivative_mod_ver2()
     end do
     call cpu_time(timer(2))
     !$acc end data
+    write(*,*) du(10,10,10)
     write (*, *) 'time taken :', timer(2) - timer(1), 'error :', maxval(du_exact - du(1:n(1), 1:n(2), 1:n(3)))
     write(*,*) "Profiling end"
 
@@ -96,6 +101,7 @@ contains
         integer  :: i, j, k
 
         !$acc parallel loop collapse(3) present(u,du,n,factors)
+        !!$acc parallel loop  vector_length(128) num_workers(4) collapse(3) present(u,du,n,factors)
         do k = 1, n(3)
             do j = 1, n(2)
                 do i = 1, n(1)
@@ -156,4 +162,6 @@ contains
         end do
         !$acc end parallel
     end subroutine derivative_mod_ver2
+
+
 end program fd3d
