@@ -28,8 +28,7 @@ program fd3d
     end do
     call cpu_time(timer(2))
     !$acc end data
-    write(*,*) du(10,10,10)
-    write (*, *) 'time taken :', timer(2) - timer(1), 'error :', maxval(du_exact - du(1:n(1), 1:n(2), 1:n(3)))
+    write (*, *) 'time taken :', timer(2) - timer(1), 'error :', maxval(du_exact - du)
     write(*,*) "Profiling end"
 
 contains
